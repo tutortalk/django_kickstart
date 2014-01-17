@@ -1,4 +1,4 @@
-djano_kickstart
+django_kickstart
 ===============
 
 simple kickstarter clone
