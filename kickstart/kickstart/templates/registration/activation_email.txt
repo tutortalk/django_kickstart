@@ -1,0 +1,9 @@
+{% load i18n %}
+
+{% url 'registration_activate' activation_key as activation_url %}
+{% blocktrans with domain=site.domain site_name=site.name %}
+You (or someone who knows your email) tried to sign up on site {{ site_name }}.
+If that was not you, pease ignore this letter.
+To activate your account - please follow the link below in {{ expiration_days }} days: 
+http://{{ domain }}{{ activation_url }}
+{% endblocktrans %}

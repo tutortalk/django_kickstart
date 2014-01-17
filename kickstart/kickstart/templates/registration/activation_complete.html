@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+{% url "auth_login" as login_url %}
+{% blocktrans %}
+Thanks, your account activated! You can <a href='{{ login_url }}'>log in</a> using your login and password
+{% endblocktrans %}
+
+{% endblock %}

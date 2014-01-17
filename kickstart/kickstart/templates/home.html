@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+    {% if request.user.is_authenticated %}
+        Hello, {{ request.user.username }}
+        <a href="{% url "custom-logout" %}">{% trans "Logout" %}</a>
+    {% else %}
+        <a href="{% url "django.contrib.auth.views.login" %}">{% trans "Login" %}</a>
+        <a href="{% url "kickstart_registration" %}">{% trans "Registration" %}</a>    
+    {% endif %}
+{% endblock %}
