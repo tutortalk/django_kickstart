@@ -1,12 +1,23 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load loginza_widget %}
 
 {% block content %}
+
+{% if loginza_registration %}
+<h2>{% trans "Complete loginza registration" %}:</h2>
+{% endif %}
 
 <form action="" method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <input type="submit" value="{% trans "Register" %}">
 </form>
+
+{% if not loginza_registration %}
+    <hr>
+    {% trans "Or you can register via this services" %}<br> 
+    {% loginza_iframe height="200px" %}
+{% endif %}
 
 {% endblock %}

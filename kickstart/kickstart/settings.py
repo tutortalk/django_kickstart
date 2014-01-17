@@ -27,6 +27,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'registration',
+    'loginza',
     'south',
     'kickstart',
 )
@@ -69,7 +70,10 @@ STATIC_URL = '/static/'
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
+    'loginza.authentication.LoginzaBackend',
 )
+
+LOGINZA_AMNESIA_PATHS = ('/accounts/complete_registration/',)
 
 ACCOUNT_ACTIVATION_DAYS = 3
 REGISTRATION_OPEN = True

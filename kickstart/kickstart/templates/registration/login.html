@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load loginza_widget %}
 
 {% block content %}
 
@@ -8,5 +9,9 @@
     {{ form.as_p }}
     <input type="submit" value="{% trans "Login" %}">
 </form>
+
+<hr>
+{% trans "Or you can enter via this services" %}<br> 
+{% loginza_iframe height="200px" %}    
 
 {% endblock %}
