@@ -30,6 +30,7 @@ INSTALLED_APPS = (
     'loginza',
     'south',
     'parsley',
+    'django_select2',
     'kickstart',
 )
 

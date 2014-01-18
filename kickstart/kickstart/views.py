@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from registration.backends.default.views import RegistrationView as TwoStepsRegistrationView
-from .models import Profile
+from .models import Profile, Project, Benefit
 import loginza
 from django.contrib import messages, auth
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -14,7 +14,13 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.edit import FormView
 from django.views.generic.detail import DetailView
 from parsley.decorators import parsleyfy
-from .forms import ProfileForm, DebugProfileForm
+from .forms import ProfileForm, DebugProfileForm, ProjectForm, BenefitForm
+
+import datetime
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseForbidden
+from django.forms.models import modelformset_factory
 
 
 class KickstartRegistrationMixin(object):
@@ -135,9 +141,62 @@ class ProfileEditView(LoginRequiredMixin, FormView):
     def form_valid(self, form):
         form.save()
         result = super(ProfileEditView, self).form_valid(form)
-        messages.add_message(self.request, messages.INFO, u"profile_saved")
 
         return result
 
     def get_success_url(self):
         return reverse('profile-edit')
+
+
+class ProjectCreateView(LoginRequiredMixin, FormView):
+    form_class = ProjectForm
+    template_name = 'project/create.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(ProjectCreateView, self).get_form_kwargs()
+        kwargs['instance'] = Project(user=self.request.user)
+        init_date = timezone.now() + datetime.timedelta(days=31)
+        kwargs['initial']['deadline'] = init_date.strftime('%Y-%m-%d %H:%M:%S')
+
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+
+        return super(ProjectCreateView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('profile', args=(self.request.user, ))
+
+
+class ProjectEditView(LoginRequiredMixin, FormView):
+    form_class = ProjectForm
+    template_name = 'project/edit.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs['project_id'])
+        if self.project.user_id != request.user.pk:
+            return HttpResponseForbidden()
+
+        return super(ProjectEditView, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ProjectEditView, self).get_context_data(*args, **kwargs)
+        context['project'] = self.project
+        context['benefits'] = modelformset_factory(Benefit, form=BenefitForm, extra=1)(queryset=self.project.benefits.all())
+
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super(ProjectEditView, self).get_form_kwargs()
+        kwargs['instance'] = self.project
+
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+
+        return super(ProjectEditView, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('profile', args=(self.request.user, ))

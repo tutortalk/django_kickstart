@@ -22,4 +22,19 @@
         <b>{% trans "About" %}:</b><br>
         {{ profile.about|linebreaksbr }}
     {% endif %}
+
+    <h3>{% trans "Projects" %}:</h3>
+    {% for project in profile.user.projects.all %}
+    <div>
+        <h2>{{ project.name }}</h2>
+        {% if profile.user_id == request.user.pk %}
+            <a href="{% url "project-edit" project.pk %}">{% trans "Edit" %}</a><br>
+        {% endif %}
+        {{ project.short_desc|linebreaks }}
+    </div>
+    {% endfor %}
+
+    {% if profile.user_id == request.user.pk %}
+        <a href="{% url "project-create" %}">{% trans "Create project" %}</a>
+    {% endif %}
 {% endblock %}

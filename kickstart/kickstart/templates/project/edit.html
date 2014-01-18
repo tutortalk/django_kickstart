@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+   <script>
+       $(document).ready(function() {
+           $('#benefits div').formset();
+       })
+   </script>
+
+    <h2>{% trans "Edit project" %}</h2>
+    {% include "project/form.html" %}
+
+    <hr>
+
+    <h3>{% trans "Benefits" %}:</h3>
+    <form id="benefits" action="">
+    {% for benefit_form in benefits.forms %}
+        <div>{{ benefit_form.as_p }}</div>
+    {% endfor %}
+    </form>
+{% endblock %}
