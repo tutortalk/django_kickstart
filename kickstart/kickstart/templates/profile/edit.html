@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+{% if messages %}
+<div>
+    {% for message in messages %}
+        <h3>{% trans "Changes successfully saved" %}</h3>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+<form action="" method="POST" parsley-validate>
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="field">
+            <b>{{ field.label_tag }}</b><br>
+            {{ field }}<br>
+            {{ field.errors }}
+        </div><br>
+    {% endfor %}
+    <input type="submit" value="{% trans "Save" %}">
+</form>
+
+{% endblock %}

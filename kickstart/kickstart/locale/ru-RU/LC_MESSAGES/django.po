@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-01-17 22:15+0600\n"
+"POT-Creation-Date: 2014-01-18 19:29+0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,16 +17,44 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: templates/home.html:7
+#: templates/base.html:12 templates/profile/detail.html:8
+msgid "Balance"
+msgstr ""
+
+#: templates/base.html:13
 msgid "Logout"
 msgstr ""
 
-#: templates/home.html:9 templates/registration/login.html:9
+#: templates/base.html:16 templates/registration/login.html:10
 msgid "Login"
 msgstr ""
 
-#: templates/home.html:10
+#: templates/base.html:17
 msgid "Registration"
+msgstr ""
+
+#: templates/profile/detail.html:7
+msgid "Edit profile"
+msgstr ""
+
+#: templates/profile/detail.html:11
+msgid "Username"
+msgstr ""
+
+#: templates/profile/detail.html:14
+msgid "Last name"
+msgstr ""
+
+#: templates/profile/detail.html:18
+msgid "First name"
+msgstr ""
+
+#: templates/profile/detail.html:22
+msgid "About"
+msgstr ""
+
+#: templates/profile/edit.html:15
+msgid "Save"
 msgstr ""
 
 #: templates/registration/activate.html:5
@@ -57,12 +85,24 @@ msgstr ""
 msgid "Kickstart account registration"
 msgstr ""
 
+#: templates/registration/login.html:14
+msgid "Or you can enter via this services"
+msgstr ""
+
 #: templates/registration/registration_complete.html:5
 msgid ""
 "The activation letter was sent. Please check your email and follow the link "
 "to activate your account"
 msgstr ""
 
-#: templates/registration/registration_form.html:9
+#: templates/registration/registration_form.html:8
+msgid "Complete loginza registration"
+msgstr ""
+
+#: templates/registration/registration_form.html:14
 msgid "Register"
+msgstr ""
+
+#: templates/registration/registration_form.html:19
+msgid "Or you can register via this services"
 msgstr ""

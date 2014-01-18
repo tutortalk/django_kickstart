@@ -8,6 +8,13 @@ from django.shortcuts import redirect
 from loginza.models import UserMap
 from registration.views import RegistrationView as BaseRegistrationView
 
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+from django.views.generic.edit import FormView
+from django.views.generic.detail import DetailView
+from parsley.decorators import parsleyfy
+from .forms import ProfileForm, DebugProfileForm
 
 
 class KickstartRegistrationMixin(object):
@@ -15,6 +22,12 @@ class KickstartRegistrationMixin(object):
         profile = Profile()
         profile.user = new_user
         profile.save()
+
+    def get_form(self, form_class):
+        form_class = parsleyfy(form_class)
+        form = super(KickstartRegistrationMixin, self).get_form(form_class)
+
+        return form
 
 
 class KickstartRegistrationView(KickstartRegistrationMixin, TwoStepsRegistrationView):
@@ -88,6 +101,43 @@ def loginza_auth_handler(sender, user, identity, **kwargs):
 loginza.signals.authenticated.connect(loginza_auth_handler)
 
 
+class LoginRequiredMixin(object):
+    u"""Ensures that user must be authenticated in order to access view."""
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        return super(LoginRequiredMixin, self).dispatch(*args, **kwargs)
+
+
 class HomeView(TemplateView):
     template_name = "home.html"
 
+
+class ProfileView(DetailView):
+    model = Profile
+    slug_field = 'user__username'
+    slug_url_kwarg = 'username'
+    template_name = 'profile/detail.html'
+    context_object_name = 'profile'
+
+
+class ProfileEditView(LoginRequiredMixin, FormView):
+    form_class = DebugProfileForm if settings.DEBUG else ProfileForm
+    success_message = "Changes successfully saved"
+    template_name = 'profile/edit.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(ProfileEditView, self).get_form_kwargs()
+        kwargs['instance'] = self.request.user.profile
+
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        result = super(ProfileEditView, self).form_valid(form)
+        messages.add_message(self.request, messages.INFO, u"profile_saved")
+
+        return result
+
+    def get_success_url(self):
+        return reverse('profile-edit')

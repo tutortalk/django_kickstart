@@ -1,8 +1,24 @@
+{% load i18n %}
+{% load loginza_widget %}
+
 <html>
 <head>
     <title></title>
+    <script src="{{ STATIC_URL }}jquery-1.10.2.min.js"></script>
+    <script src="{{ STATIC_URL }}parsley.js"></script>
 </head>
 <body>
+<div class="header">
+    {% if request.user.is_authenticated %}
+        Hello, <a href="{% url "profile" request.user.username %}">{{ request.user.username }}</a> | 
+        <b>{% trans "Balance" %}:</b> {{ request.user.profile.balance }} |
+        <a href="{% url "custom-logout" %}">{% trans "Logout" %}</a>
+    {% else %}
+        {% loginza_button lang=request.LANGUAGE_CODE %}
+        <a href="{% url "custom-login" %}">{% trans "Login" %}</a>
+        <a href="{% url "kickstart_registration" %}">{% trans "Registration" %}</a>    
+    {% endif %}
+</div>
 {% block content %}{% endblock %}
 </body>
 </html>

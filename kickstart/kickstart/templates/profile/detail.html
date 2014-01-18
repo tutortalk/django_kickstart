@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h2>Profile</h2>
+    {% if profile.user_id == request.user.pk %}
+        <a href="{% url "profile-edit" %}">{% trans "Edit profile" %}</a><br>
+        <b>{% trans "Balance" %}:</b> {{ profile.balance }} bucks
+    {% endif %}<br>
+
+    <b>{% trans "Username" %}:</b> {{ profile.user.username|capfirst }}<br>
+
+    {% if profile.last_name %}
+        <b>{% trans "Last name" %}:</b> {{ profile.last_name }}<br>
+    {% endif %}
+
+    {% if profile.first_name %}
+        <b>{% trans "First name" %}:</b> {{ profile.first_name }}<br>
+    {% endif %}
+
+    {% if profile.about %}
+        <b>{% trans "About" %}:</b><br>
+        {{ profile.about|linebreaksbr }}
+    {% endif %}
+{% endblock %}

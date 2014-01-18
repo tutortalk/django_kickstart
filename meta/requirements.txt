@@ -3,3 +3,4 @@ django
 django-registration
 south
 django-loginza
+django-parsley
