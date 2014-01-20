@@ -11,16 +11,17 @@ from registration.views import RegistrationView as BaseRegistrationView
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from django.views.generic.base import View
 from django.views.generic.edit import FormView
 from django.views.generic.detail import DetailView
 from parsley.decorators import parsleyfy
-from .forms import ProfileForm, DebugProfileForm, ProjectForm, BenefitForm
+from .forms import ProfileForm, DebugProfileForm, ProjectForm, DebugProjectForm, BenefitForm
 
 import datetime
+import json
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
-from django.http import HttpResponseForbidden
-from django.forms.models import modelformset_factory
+from django.http import HttpResponse, HttpResponseForbidden
 
 
 class KickstartRegistrationMixin(object):
@@ -148,6 +149,28 @@ class ProfileEditView(LoginRequiredMixin, FormView):
         return reverse('profile-edit')
 
 
+class ProjectOwnerMixin(object):
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs['project_id'])
+        if self.project.user_id != request.user.pk:
+            return HttpResponseForbidden()
+
+        return super(ProjectOwnerMixin, self).dispatch(request, *args, **kwargs)
+
+
+class JSONResponseMixin(object):
+    def json_response(self, context):
+        return HttpResponse(json.dumps(context), content_type='application/json')
+
+
+class ProjectDetailView(DetailView):
+    model = Project
+    slug_field = 'slug_name'
+    slug_url_kwarg = 'slug_name'
+    template_name = 'project/detail.html'
+    context_object_name = 'project'
+
+
 class ProjectCreateView(LoginRequiredMixin, FormView):
     form_class = ProjectForm
     template_name = 'project/create.html'
@@ -169,21 +192,13 @@ class ProjectCreateView(LoginRequiredMixin, FormView):
         return reverse('profile', args=(self.request.user, ))
 
 
-class ProjectEditView(LoginRequiredMixin, FormView):
-    form_class = ProjectForm
+class ProjectEditView(LoginRequiredMixin, ProjectOwnerMixin, FormView):
+    form_class = DebugProjectForm if settings.DEBUG else ProjectForm
     template_name = 'project/edit.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        self.project = get_object_or_404(Project, pk=kwargs['project_id'])
-        if self.project.user_id != request.user.pk:
-            return HttpResponseForbidden()
-
-        return super(ProjectEditView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectEditView, self).get_context_data(*args, **kwargs)
         context['project'] = self.project
-        context['benefits'] = modelformset_factory(Benefit, form=BenefitForm, extra=1)(queryset=self.project.benefits.all())
 
         return context
 
@@ -200,3 +215,48 @@ class ProjectEditView(LoginRequiredMixin, FormView):
 
     def get_success_url(self):
         return reverse('profile', args=(self.request.user, ))
+
+
+class ProjectPublishView(LoginRequiredMixin, ProjectOwnerMixin, JSONResponseMixin, View):
+    def post(self, request, *args, **kwargs):
+        self.project.is_public = True
+        self.project.save()
+
+        return self.json_response({'success': True})
+
+
+class BenefitSaveView(LoginRequiredMixin, ProjectOwnerMixin, FormView, JSONResponseMixin, View):
+    form_class = BenefitForm
+
+    def get_form_kwargs(self):
+        kwargs = super(BenefitSaveView, self).get_form_kwargs()
+        benefit_id = self.request.POST.get('benefit_id', None)
+
+        if benefit_id:
+            benefit = Benefit.objects.get(pk=benefit_id, project=self.project)
+
+        else:
+            benefit = Benefit(project=self.project)
+
+        kwargs['instance'] = benefit
+
+        return kwargs
+
+    def form_valid(self, form):
+        benefit = form.save()
+        return self.json_response({'success': True, 'benefit_id': benefit.pk})
+
+    def form_invalid(self, form):
+        return self.json_response({'success': False})
+
+
+class BenefitDeleteView(LoginRequiredMixin, ProjectOwnerMixin, JSONResponseMixin, View):
+    def post(self, request, **kwargs):
+        benefit_id = request.POST.get('benefit_id', None)
+        benefit = get_object_or_404(Benefit, pk=benefit_id)
+        if self.project.pk != benefit.project_id:
+            return HttpResponseForbidden()
+
+        benefit.delete()
+
+        return self.json_response({'success': True})

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block css %}
+<style>
+.project-container:after {
+  content: " ";
+  visibility: hidden;
+  display: block;
+  height: 0;
+  clear: both;
+}
+.project-container:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+.project-container .column {
+    float: left;
+}
+.project-container .left {
+    width: 75%;
+}
+.project-container .right {
+    width: 20%;
+}
+.tags {
+    margin-top: 10px;
+}
+.amount {
+    margin-bottom: 10px;
+}
+.benefit {
+    margin-bottom: 10px;
+}
+</style>
+
+{% endblock css %}
+
+{% block content %}
+
+<div class="project-container">
+    <div class="column left">
+        <h1>{{ project.name }}</h1>
+        {{ project.desc|removetags:"script style iframe form"|safe }}
+        <div class="tags">
+            <b>{% trans "Tags" %}:</b>
+            {% for tag in project.tags.all %}
+                {{ tag.name }}            
+            {% endfor %}
+        </div>
+    </div>
+    <dir class="column right">
+        <b>{% trans "Target amount" %}:</b>
+        <div class="amount">{{ project.amount }} bucks</div>
+
+        <div>{{ project.deadline|date:"jS F Y H:i T" }}</div>
+
+        <h3>{% trans "benefits" %}:</h3>
+        {% for benefit in project.benefits.all %}
+            <div class="benefit">
+                <b>{{ benefit.amount }}</b>. {{ benefit.text|linebreaksbr }}
+            </div>
+        {% endfor %}
+    </dir>
+</div>
+
+{% endblock content %}

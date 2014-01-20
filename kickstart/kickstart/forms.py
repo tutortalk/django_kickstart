@@ -33,6 +33,16 @@ class TagChoices(AutoModelSelect2TagField):
 
 
 @parsleyfy
+class DebugProjectForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['name', 'short_desc', 'desc', 'amount', 'deadline', 'tags', 'is_public']
+
+    deadline = forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M:%S'])
+    tags = TagChoices(required=False)
+
+
+@parsleyfy
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = Project
@@ -40,6 +50,7 @@ class ProjectForm(forms.ModelForm):
 
     deadline = forms.DateTimeField(input_formats=['%Y-%m-%d %H:%M:%S'])
     tags = TagChoices(required=False)
+
 
 
 @parsleyfy

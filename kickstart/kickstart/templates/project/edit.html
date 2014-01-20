@@ -1,22 +1,107 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block css %}
+<style>
+  .benefit-form-prototype {
+    display: none;
+  }
+  .benefit form input {
+    border: 1px solid gray;
+  }
+  input.parsley-error {
+    border: 1px solid red !important;
+    background-color: #FFECEC;
+  }
+  ul.parsley-error-list {
+    display:none !important;
+  }
+  ul.parsley-error-list li {
+    display:none !important;
+  }
+</style>  
+{% endblock css %}
+
+{% block js %}
+<script>
+  var benefit_save_url = '{% url "benefit-save" project.pk %}';
+  var benefit_delete_url = '{% url "benefit-delete" project.pk %}';
+  var csrf_token = '{{ csrf_token }}';
+
+  $(document).ready(function(){
+    $('.add-new').click(function(){
+      $('.benefit-form-prototype .benefit').clone().appendTo('.benefits');
+
+      return false;
+    });
+
+    $(document).on('click', '.benefit .save', function(){
+      var benefit = $(this).parents('.benefit');
+      var form = $(this).parents('form');
+      form.parsley('validate');
+      if (form.parsley('isValid')) {
+        benefit.find('form').append( $('<img>').attr('src', '/static/ajax-loader.gif').addClass('loader') );
+
+        data = form.serialize();
+        benefit_id = benefit.attr('data-id');
+
+        if (benefit_id) {
+          data += '&benefit_id=' + benefit_id;
+        }
+
+        $.post(benefit_save_url, data, function(data){
+          if (data.success) {
+            benefit.attr('data-id', data.benefit_id);
+          }
+
+          benefit.find('.loader').remove();
+        });
+      }
+
+      return false;
+    });
+
+    $(document).on('click', '.benefit .delete', function(){
+      var benefit = $(this).parents('.benefit');
+      var benefit_id = benefit.attr('data-id');
+
+      if (!benefit_id) {
+        benefit.remove();
+      }
+      else if (confirm('Are you shure?')){
+        benefit.find('form').append( $('<img>').attr('src', '/static/ajax-loader.gif').addClass('loader') );
+
+        $.post(benefit_delete_url, {'benefit_id': benefit_id, 'csrfmiddlewaretoken': csrf_token}, function(data){
+          if(data.success) {
+            benefit.remove();
+          }
+        });
+      }
+
+      return false;
+    });
+  });
+</script>
+{% endblock js %}
+
 {% block content %}
-   <script>
-       $(document).ready(function() {
-           $('#benefits div').formset();
-       })
-   </script>
+  <h2>{% trans "Edit project" %}</h2>
+  {% include "project/form.html" %}
 
-    <h2>{% trans "Edit project" %}</h2>
-    {% include "project/form.html" %}
+  <hr>
 
-    <hr>
+  <h3>{% trans "Benefits" %}:</h3>
+  <div class="benefit-form-prototype">
+    {% include "project/benefit_form.html" with project=project %}
+  </div>
 
-    <h3>{% trans "Benefits" %}:</h3>
-    <form id="benefits" action="">
-    {% for benefit_form in benefits.forms %}
-        <div>{{ benefit_form.as_p }}</div>
+  <div class="benefits">
+    {% for benefit in project.benefits.all %}
+      {% include "project/benefit_form.html" with project=project benefit=benefit %}
     {% endfor %}
-    </form>
+
+    {% include "project/benefit_form.html" with project=project %}
+  </div>
+
+  <a href="#" class="add-new">{% trans "Add new" %}</a>
 {% endblock %}

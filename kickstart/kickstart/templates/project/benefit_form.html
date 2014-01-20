@@ -1,0 +1,18 @@
+{% load i18n %}
+
+<div class="benefit"{% if benefit %} data-id="{{ benefit.pk }}"{% endif %}>
+    <form action="" parsley-validate>
+      {% csrf_token %}
+
+      {% if benefit %}
+          <input type="hidden" name="benefit_id" value="{{ benefit.pk }}">
+      {% endif %}
+
+      <input type="number" step="0.01" value="{{ benefit.amount }}" name="amount" placeholder="{% trans "Benefit amount required" %}" parsley-type="number" parsley-required="true" class="parsley-validated">
+
+      <input type="text" value="{{ benefit.text }}" name="text" placeholder="{% trans "Benefit text" %}" parsley-required="true" class="parsley-validated">
+
+      <a href="#" class="save">{% trans "Save" %}</a>
+      <a href="#" class="delete">{% trans "Delete" %}</a>
+    </form>
+</div>

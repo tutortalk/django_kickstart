@@ -15,12 +15,15 @@ urlpatterns = patterns('',
 
     url(r'^register/$', views.KickstartRegistrationView.as_view(), name='kickstart_registration'),
     url(r'^accounts/', include('registration.backends.default.urls')),
-
-    url(r'^profile/edit/', views.ProfileEditView.as_view(), name='profile-edit'),
-    url(r'^profile/(?P<username>[^/]+)/', views.ProfileView.as_view(), name='profile'),
-
-    url(r'^project/create/', views.ProjectCreateView.as_view(), name='project-create'),
-    url(r'^project/(?P<project_id>[0-9]+)/', views.ProjectEditView.as_view(), name='project-edit'),
-
     url(r'^select2/', include('django_select2.urls')),
+
+    url(r'^profile/edit/$', views.ProfileEditView.as_view(), name='profile-edit'),
+    url(r'^profile/(?P<username>[^/]+)/$', views.ProfileView.as_view(), name='profile'),
+
+    url(r'^project/create/$', views.ProjectCreateView.as_view(), name='project-create'),
+    url(r'^project/(?P<slug_name>[^/]+)/$', views.ProjectDetailView.as_view(), name='project'),
+    url(r'^project/(?P<project_id>[0-9]+)/publish/$', views.ProjectPublishView.as_view(), name='project-publish'),
+    url(r'^project/(?P<project_id>[0-9]+)/edit/$', views.ProjectEditView.as_view(), name='project-edit'),
+    url(r'^project/(?P<project_id>[0-9]+)/benefit/save/$', views.BenefitSaveView.as_view(), name='benefit-save'),
+    url(r'^project/(?P<project_id>[0-9]+)/benefit/delete/$', views.BenefitDeleteView.as_view(), name='benefit-delete'),
 )

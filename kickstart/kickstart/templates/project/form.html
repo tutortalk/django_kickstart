@@ -7,6 +7,25 @@
             timeFormat: 'hh:mm',
             timezone: '+0000'
         });
+
+        {% if not project.is_public and project.pk %}
+        var csrf_token = '{{ csrf_token }}';
+        var publish_url = '{% url "project-publish" project.pk %}'
+        $('.publish').click(function(){
+            $(this).after( $('<img>').attr('src', '/static/ajax-loader.gif').addClass('loader') );
+
+            $.post(publish_url, {'csrfmiddlewaretoken': csrf_token}, function(data){
+                if (data.success) {
+                    $('.loader').remove();
+                    $('.publish').after('Your project was successfully published');
+                    $('.publish').remove();
+                    $('#id_is_public').attr('checked', true);
+                }
+            });
+
+            return false;
+        });
+        {% endif %}
     });
 </script>
 
@@ -22,4 +41,7 @@
     {% endfor %}
 
     <input type="submit" value="{% trans "Save" %}">
+    {% if not project.is_public and project.pk %}
+        <button class="publish" type="button">{% trans "Publish project" %}</button>
+    {% endif %}
 </form>

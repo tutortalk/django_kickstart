@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from pytils.translit import slugify
+from django.utils.translation import ugettext_lazy as _
 
 
 class Profile(models.Model):
@@ -30,15 +31,24 @@ class Project(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        create_benefit = not self.pk
         self.slug_name = slugify(u"{0}-{1}".format(self.name, self.user.username))
 
-        return super(Project, self).save(*args, **kwargs)
+        super(Project, self).save(*args, **kwargs)
+
+        if create_benefit:
+            benefit = Benefit(project=self, amount='100.00', text=_(u"Get test example"))
+            benefit.save()
+            self.benefits.add(benefit)
 
 
 class Benefit(models.Model):
     project = models.ForeignKey(Project, related_name='benefits')
     amount = models.DecimalField(max_digits=8, decimal_places=2, null=False, blank=False)
     text = models.TextField(null=False, blank=False)
+
+    class Meta:
+        ordering = ['amount']
 
 
 class Tag(models.Model):
