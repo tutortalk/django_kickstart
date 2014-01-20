@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from registration.backends.default.views import RegistrationView as TwoStepsRegistrationView
-from .models import Profile, Project, Benefit
+from .models import Profile, Project, Benefit, profile_avatar_dir
 import loginza
 from django.contrib import messages, auth
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -22,6 +22,9 @@ import json
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse, HttpResponseForbidden
+
+import os
+from .fineuploader import qqFileUploader
 
 
 class KickstartRegistrationMixin(object):
@@ -116,6 +119,11 @@ class LoginRequiredMixin(object):
         return super(LoginRequiredMixin, self).dispatch(*args, **kwargs)
 
 
+class JSONResponseMixin(object):
+    def json_response(self, context):
+        return HttpResponse(json.dumps(context), content_type='application/json')
+
+
 class HomeView(TemplateView):
     template_name = "home.html"
 
@@ -133,6 +141,12 @@ class ProfileEditView(LoginRequiredMixin, FormView):
     success_message = "Changes successfully saved"
     template_name = 'profile/edit.html'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(ProfileEditView, self).get_context_data(*args, **kwargs)
+        context['profile'] = self.request.user.profile
+
+        return context
+
     def get_form_kwargs(self):
         kwargs = super(ProfileEditView, self).get_form_kwargs()
         kwargs['instance'] = self.request.user.profile
@@ -149,6 +163,35 @@ class ProfileEditView(LoginRequiredMixin, FormView):
         return reverse('profile-edit')
 
 
+class ProfileAvatarUploadView(LoginRequiredMixin, JSONResponseMixin, View):
+    def post(self, request, *args, **kwargs):
+        profile = request.user.profile
+
+        relative_upload_path = profile_avatar_dir(profile, self.request.POST.get('qqfilename', None))
+        absolute_upload_path = os.path.join(settings.MEDIA_ROOT, relative_upload_path)
+        upload_dir = os.path.dirname(absolute_upload_path)
+        filename = os.path.basename(absolute_upload_path)
+
+        uploader = qqFileUploader(request, uploadDirectory=upload_dir, allowedExtensions=[".jpg", ".jpeg", ".png"], sizeLimit=2147483648)
+        result = uploader.handleUpload(filename)
+
+        if not 'error' in result:
+            profile.avatar = relative_upload_path
+            profile.save()
+            result['image'] = profile.avatar.url
+
+        return self.json_response(result)
+
+
+class ProfileAvatarDeleteView(LoginRequiredMixin, JSONResponseMixin, View):
+    def post(self, request, *args, **kwargs):
+         profile = request.user.profile
+         profile.avatar.delete()
+         profile.save()
+
+         return self.json_response({'success': True})
+
+
 class ProjectOwnerMixin(object):
     def dispatch(self, request, *args, **kwargs):
         self.project = get_object_or_404(Project, pk=kwargs['project_id'])
@@ -156,11 +199,6 @@ class ProjectOwnerMixin(object):
             return HttpResponseForbidden()
 
         return super(ProjectOwnerMixin, self).dispatch(request, *args, **kwargs)
-
-
-class JSONResponseMixin(object):
-    def json_response(self, context):
-        return HttpResponse(json.dumps(context), content_type='application/json')
 
 
 class ProjectDetailView(DetailView):

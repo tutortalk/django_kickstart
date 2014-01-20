@@ -2,6 +2,8 @@ from django.conf.urls import patterns, url, include
 from . import views
 from .forms import KickstartAuthenticationForm
 from loginza.views import return_callback
+from django.conf.urls.static import static
+from django.conf import settings
 
 
 urlpatterns = patterns('',
@@ -18,6 +20,8 @@ urlpatterns = patterns('',
     url(r'^select2/', include('django_select2.urls')),
 
     url(r'^profile/edit/$', views.ProfileEditView.as_view(), name='profile-edit'),
+    url(r'^profile/avatar-upload/$', views.ProfileAvatarUploadView.as_view(), name='profile-avatar-upload'),
+    url(r'^profile/avatar-delete/$', views.ProfileAvatarDeleteView.as_view(), name='profile-avatar-delete'),
     url(r'^profile/(?P<username>[^/]+)/$', views.ProfileView.as_view(), name='profile'),
 
     url(r'^project/create/$', views.ProjectCreateView.as_view(), name='project-create'),
@@ -26,4 +30,4 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>[0-9]+)/edit/$', views.ProjectEditView.as_view(), name='project-edit'),
     url(r'^project/(?P<project_id>[0-9]+)/benefit/save/$', views.BenefitSaveView.as_view(), name='benefit-save'),
     url(r'^project/(?P<project_id>[0-9]+)/benefit/delete/$', views.BenefitDeleteView.as_view(), name='benefit-delete'),
-)
+) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

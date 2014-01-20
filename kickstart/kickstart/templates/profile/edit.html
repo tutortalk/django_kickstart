@@ -1,5 +1,41 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load thumbnail %}
+
+{% block js %}
+<script>
+    var upload_url = '{% url "profile-avatar-upload" %}';
+    var csrf_token = '{{ csrf_token }}';
+    function create_uploader() {
+        var uploader = new qq.FineUploader({
+            element: document.getElementById('avatar-uploader'),
+            request: {
+                endpoint: upload_url,
+                params: {'csrfmiddlewaretoken': csrf_token}
+            },
+            chunking: {
+                enabled: true
+            },
+
+            callbacks: {
+                onComplete: function(id, name, response) {
+
+                },
+                onError: function(id, name, reason) {
+                    alert(reason);
+                }
+
+            }
+        });
+    }
+
+    $(document).ready(function(){
+        {% if not profile.avatar %}
+            create_uploader();
+        {% endif %}
+    });
+</script>
+{% endblock js %}
 
 {% block content %}
 
@@ -11,9 +47,20 @@
 </div>
 {% endif %}
 
-
 <form action="" method="POST" parsley-validate>
     {% csrf_token %}
+
+    <div class="avatar">
+    {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" alt=""><br>
+        <a href="{% url "profile-avatar-delete" %}">{% trans "Delete avatar" %}</a>
+    {% else %}
+
+        <img src="{{ STATIC_URL }}default_avatar.png" alt="">
+        <div id="avatar-uploader"></div>
+    {% endif %}
+    </div>
+
     {% for field in form %}
         <div class="field">
             <b>{{ field.label_tag }}</b><br>

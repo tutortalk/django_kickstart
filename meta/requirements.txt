@@ -6,3 +6,4 @@ django-loginza
 django-parsley
 pytils
 django_select2
+pillow

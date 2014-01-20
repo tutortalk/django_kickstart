@@ -1,7 +1,17 @@
+import os
 from django.db import models
 from django.contrib.auth.models import User
 from pytils.translit import slugify
 from django.utils.translation import ugettext_lazy as _
+
+
+def profile_avatar_dir(instance, filename):
+    name, ext = os.path.splitext(os.path.basename(filename))
+
+    return os.path.join(
+        str(instance.user_id),
+        'avatar' + ext
+    )
 
 
 class Profile(models.Model):
@@ -10,6 +20,7 @@ class Profile(models.Model):
     last_name = models.CharField(max_length=100)
     about = models.TextField(null=True, blank=True)
     balance = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    avatar = models.ImageField(upload_to=profile_avatar_dir, null=True, blank=True)
 
     def __unicode__(self):
         return u"{0} - {1} - {2}".format(self.user.username, self.last_name, self.first_name)

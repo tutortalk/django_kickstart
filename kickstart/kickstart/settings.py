@@ -32,6 +32,7 @@ INSTALLED_APPS = (
     'parsley',
     'django_select2',
     'kickstart',
+    "easy_thumbnails",
 )
 
 MIDDLEWARE_CLASSES = (
@@ -68,8 +69,15 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
+MEDIA_URL = '/media/'
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 
+THUMBNAIL_ALIASES = {
+    '': {
+        'avatar': {'size': (64, 64), 'crop': True, 'upscale': True},
+    },
+}
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
