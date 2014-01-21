@@ -3,17 +3,27 @@
 
 {% block css %}
 <style>
-.project-container:after {
+.project-container:after, .project-container .header:after {
   content: " ";
   visibility: hidden;
   display: block;
   height: 0;
   clear: both;
 }
-.project-container:after {
+.project-container:after, .project-container .header:after {
   content: "";
   display: table;
   clear: both;
+}
+.project-container .header {
+    margin-bottom: 10px;
+    text-align: center;
+}
+.project-container .header > * {
+    float: left;
+}
+.project-container .header .author {
+    margin-right: 10px;
 }
 .project-container .column {
     float: left;
@@ -41,7 +51,13 @@
 
 <div class="project-container">
     <div class="column left">
-        <h1>{{ project.name }}</h1>
+        <div class="header">
+            <div class="author">
+                <img src="{{ project.user.profile.get_avatar }}"><br>
+                <a href="{% url "profile" project.user.username %}" target="_blank">{{ project.user.username|capfirst }}</a>
+            </div>
+            <h1>{{ project.name }}</h1>
+        </div>
         {{ project.desc|removetags:"script style iframe form"|safe }}
         <div class="tags">
             <b>{% trans "Tags" %}:</b>
@@ -49,6 +65,13 @@
                 {{ tag.name }}            
             {% endfor %}
         </div>
+
+        <h3>{% trans "Files" %}:</h3>
+        <ol>
+        {% for file in project.files.all %}
+            <li><a href="{{ file.file.url }}">{{ file.original_filename }}</a></li>
+        {% endfor %}
+        </ol>
     </div>
     <dir class="column right">
         <b>{% trans "Target amount" %}:</b>

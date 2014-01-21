@@ -8,6 +8,16 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Adding model 'ProjectFile'
+        db.create_table(u'kickstart_projectfile', (
+            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('project', self.gf('django.db.models.fields.related.ForeignKey')(related_name='files', to=orm['kickstart.Project'])),
+            ('original_filename', self.gf('django.db.models.fields.CharField')(max_length=255)),
+            ('file', self.gf('django.db.models.fields.files.FileField')(max_length=100)),
+            ('ext', self.gf('django.db.models.fields.CharField')(max_length=10)),
+        ))
+        db.send_create_signal(u'kickstart', ['ProjectFile'])
+
         # Adding field 'Profile.avatar'
         db.add_column(u'kickstart_profile', 'avatar',
                       self.gf('django.db.models.fields.files.ImageField')(max_length=100, null=True, blank=True),
@@ -15,6 +25,9 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
+        # Deleting model 'ProjectFile'
+        db.delete_table(u'kickstart_projectfile')
+
         # Deleting field 'Profile.avatar'
         db.delete_column(u'kickstart_profile', 'avatar')
 
@@ -85,6 +98,14 @@ class Migration(SchemaMigration):
             'slug_name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
             'tags': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'projects'", 'symmetrical': 'False', 'to': u"orm['kickstart.Tag']"}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'projects'", 'to': u"orm['auth.User']"})
+        },
+        u'kickstart.projectfile': {
+            'Meta': {'object_name': 'ProjectFile'},
+            'ext': ('django.db.models.fields.CharField', [], {'max_length': '10'}),
+            'file': ('django.db.models.fields.files.FileField', [], {'max_length': '100'}),
+            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'original_filename': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
+            'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'files'", 'to': u"orm['kickstart.Project']"})
         },
         u'kickstart.tag': {
             'Meta': {'object_name': 'Tag'},

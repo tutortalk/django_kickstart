@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 {% load i18n %}
-{% load thumbnail %}
 
 {% block js %}
 <script>
     var upload_url = '{% url "profile-avatar-upload" %}';
+    var delete_url = '{% url "profile-avatar-delete" %}';
     var csrf_token = '{{ csrf_token }}';
-    function create_uploader() {
+
+    $(document).ready(function(){
         var uploader = new qq.FineUploader({
             element: document.getElementById('avatar-uploader'),
+            button: document.getElementById('avatar-uploader-button'),
+            multiple: false,
             request: {
                 endpoint: upload_url,
                 params: {'csrfmiddlewaretoken': csrf_token}
@@ -16,23 +19,31 @@
             chunking: {
                 enabled: true
             },
-
             callbacks: {
                 onComplete: function(id, name, response) {
-
+                    var img = $('<img>').attr('src', response.image);
+                    var delete_link = $('<a>').addClass('delete').attr('href', '#').html("Delete avatar");
+                    $('.avatar').html(img).append($('<br>')).append(delete_link);
+                    $('.qq-upload-list').remove();
                 },
                 onError: function(id, name, reason) {
                     alert(reason);
+                    $('.qq-upload-list').remove();
                 }
 
             }
         });
-    }
 
-    $(document).ready(function(){
-        {% if not profile.avatar %}
-            create_uploader();
-        {% endif %}
+        $(document).on('click', '.avatar .delete', function(){
+            if (confirm("Are you shure?")) {
+                $.post(delete_url, {'csrfmiddlewaretoken': csrf_token}, function(){
+                    var img = $('<img>').attr('src', '/static/default_avatar.png');
+                    $('.avatar').html(img);
+                });
+            }
+
+            return false;
+        });
     });
 </script>
 {% endblock js %}
@@ -51,14 +62,15 @@
     {% csrf_token %}
 
     <div class="avatar">
-    {% if profile.avatar %}
-        <img src="{{ profile.avatar.url }}" alt=""><br>
-        <a href="{% url "profile-avatar-delete" %}">{% trans "Delete avatar" %}</a>
-    {% else %}
+    <img src="{{ profile.get_avatar }}"><br>
 
-        <img src="{{ STATIC_URL }}default_avatar.png" alt="">
-        <div id="avatar-uploader"></div>
+    {% if profile.avatar %}
+    <a href="#" class="delete">{% trans "Delete avatar" %}</a>
     {% endif %}
+    </div>
+
+    <a id="avatar-uploader-button">Upload avatar</a>
+    <div id="avatar-uploader">
     </div>
 
     {% for field in form %}

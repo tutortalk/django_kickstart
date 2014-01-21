@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from registration.backends.default.views import RegistrationView as TwoStepsRegistrationView
-from .models import Profile, Project, Benefit, profile_avatar_dir
+from .models import Profile, Project, ProjectFile, Benefit, profile_avatar_dir, project_file_dir
 import loginza
 from django.contrib import messages, auth
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -25,6 +25,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 
 import os
 from .fineuploader import qqFileUploader
+from django.template import loader, RequestContext
 
 
 class KickstartRegistrationMixin(object):
@@ -124,6 +125,19 @@ class JSONResponseMixin(object):
         return HttpResponse(json.dumps(context), content_type='application/json')
 
 
+class AjaxUploadMixin(object):
+    def handle_upload(self, request, relative_upload_dir, allowed_extensions=None):
+        uploader = qqFileUploader(
+            request,
+            uploadDirectory=os.path.join(settings.MEDIA_ROOT, relative_upload_dir),
+            allowedExtensions=allowed_extensions,
+            sizeLimit=2147483648
+        )
+        result = uploader.handleUpload()
+
+        return uploader.getUploadName(), result
+
+
 class HomeView(TemplateView):
     template_name = "home.html"
 
@@ -163,22 +177,17 @@ class ProfileEditView(LoginRequiredMixin, FormView):
         return reverse('profile-edit')
 
 
-class ProfileAvatarUploadView(LoginRequiredMixin, JSONResponseMixin, View):
+class ProfileAvatarUploadView(LoginRequiredMixin, AjaxUploadMixin, JSONResponseMixin, View):
     def post(self, request, *args, **kwargs):
         profile = request.user.profile
-
-        relative_upload_path = profile_avatar_dir(profile, self.request.POST.get('qqfilename', None))
-        absolute_upload_path = os.path.join(settings.MEDIA_ROOT, relative_upload_path)
-        upload_dir = os.path.dirname(absolute_upload_path)
-        filename = os.path.basename(absolute_upload_path)
-
-        uploader = qqFileUploader(request, uploadDirectory=upload_dir, allowedExtensions=[".jpg", ".jpeg", ".png"], sizeLimit=2147483648)
-        result = uploader.handleUpload(filename)
+        profile.clear_avatar()
+        relative_upload_dir = profile_avatar_dir(profile)
+        uploaded_file_name, result = self.handle_upload(request, relative_upload_dir, allowed_extensions=[".jpg", ".jpeg", ".png"])
 
         if not 'error' in result:
-            profile.avatar = relative_upload_path
+            profile.avatar = os.path.join(relative_upload_dir, uploaded_file_name)
             profile.save()
-            result['image'] = profile.avatar.url
+            result['image'] = profile.get_avatar()
 
         return self.json_response(result)
 
@@ -186,8 +195,7 @@ class ProfileAvatarUploadView(LoginRequiredMixin, JSONResponseMixin, View):
 class ProfileAvatarDeleteView(LoginRequiredMixin, JSONResponseMixin, View):
     def post(self, request, *args, **kwargs):
          profile = request.user.profile
-         profile.avatar.delete()
-         profile.save()
+         profile.clear_avatar()
 
          return self.json_response({'success': True})
 
@@ -259,6 +267,35 @@ class ProjectPublishView(LoginRequiredMixin, ProjectOwnerMixin, JSONResponseMixi
     def post(self, request, *args, **kwargs):
         self.project.is_public = True
         self.project.save()
+
+        return self.json_response({'success': True})
+
+
+class ProjectFileUploadView(LoginRequiredMixin, ProjectOwnerMixin, AjaxUploadMixin, JSONResponseMixin, View):
+    def post(self, request, *args, **kwargs):
+        project = self.project
+        project_file = ProjectFile(project=project)
+
+        relative_upload_dir = project_file_dir(project_file)
+        uploaded_file_name, result = self.handle_upload(request, relative_upload_dir)
+
+        if not 'error' in result:
+            project_file.original_filename = request.REQUEST.get('qqfilename', None)
+            filename, ext = os.path.splitext(project_file.original_filename)
+            project_file.ext = ext
+            project_file.file = os.path.join(relative_upload_dir, uploaded_file_name)
+            project_file.save()
+            rendered_file = loader.render_to_string('project/file_preview.html', {'file': project_file}, RequestContext(request))
+            result['file'] = rendered_file
+
+        return self.json_response(result)
+
+
+class ProjectFileDeleteView(LoginRequiredMixin, ProjectOwnerMixin, JSONResponseMixin, View):
+    def post(self, request, *args, **kwargs):
+        project = self.project
+        project_file = get_object_or_404(ProjectFile, pk=kwargs['file_id'], project=project)
+        project_file.delete()
 
         return self.json_response({'success': True})
 

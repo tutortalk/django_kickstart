@@ -47,7 +47,6 @@ class qqFileUploader(object):
     def getUploadName(self):
         return self.uploadName
 
-
     def handleUpload(self, name=None):
         if not os.path.exists(self.uploadDirectory):
             os.makedirs(self.uploadDirectory)

@@ -26,6 +26,7 @@
 <script>
   var benefit_save_url = '{% url "benefit-save" project.pk %}';
   var benefit_delete_url = '{% url "benefit-delete" project.pk %}';
+  var upload_url = '{% url "project-file-upload" project.pk %}';
   var csrf_token = '{{ csrf_token }}';
 
   $(document).ready(function(){
@@ -80,6 +81,41 @@
 
       return false;
     });
+
+    var uploader = new qq.FineUploader({
+      element: document.getElementById('file-uploader'),
+      button: document.getElementById('file-uploader-button'),
+      multiple: true,
+      request: {
+        endpoint: upload_url,
+        params: {'csrfmiddlewaretoken': csrf_token}
+      },
+      chunking: {
+        enabled: true
+      },
+      callbacks: {
+        onComplete: function(id, name, response) {
+          $('.files').append(response.file);
+          $('.qq-upload-list').remove();
+        },
+        onError: function(id, name, reason) {
+          alert(reason);
+          $('.qq-upload-list').remove();
+        }
+      }
+    });
+
+    $(document).on('click', '.file .delete', function(){
+      var link = $(this);
+
+      if (confirm('Are you shure?')) {
+        $.post(link.attr('href'), {'csrfmiddlewaretoken': csrf_token}, function(){
+          link.parents('.file').remove();
+        });
+      }
+
+      return false;
+    });
   });
 </script>
 {% endblock js %}
@@ -104,4 +140,15 @@
   </div>
 
   <a href="#" class="add-new">{% trans "Add new" %}</a>
+
+  <hr>
+
+  <h3>{% trans "Project files" %}:</h3>
+  <div class="files">
+  {% for file in project.files.all %}
+    {% include "project/file_preview.html" with file=file %}
+  {% endfor %}
+  </div>
+  <div id="file-uploader"></div>
+  <a id="file-uploader-button">{% trans "Upload file" %}</a>
 {% endblock %}
