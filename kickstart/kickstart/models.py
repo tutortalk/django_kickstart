@@ -2,9 +2,11 @@ import os
 from django.db import models
 from django.contrib.auth.models import User
 from pytils.translit import slugify
+from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from easy_thumbnails.files import get_thumbnailer
+from django.core.mail import send_mail
 
 
 def profile_avatar_dir(instance):
@@ -54,6 +56,18 @@ class Profile(models.Model):
             self.save()
 
 
+class ProjectManager(models.Manager):
+    def get_all_projects(self):
+        return self.filter(is_public=True).filter(deadline__gt=timezone.now()).order_by('deadline')
+
+    def search_projects(self, search):
+        tagged_project_ids = Tag.objects.filter(name__icontains=search).values_list('projects', flat=True)
+        tagged_project_ids = list(set(tagged_project_ids))
+        query = models.Q(name__icontains=search) | models.Q(pk__in=tagged_project_ids)
+
+        return self.get_all_projects().filter(query)
+
+
 class Project(models.Model):
     user = models.ForeignKey(User, related_name='projects')
     name = models.CharField(max_length=255)
@@ -63,8 +77,10 @@ class Project(models.Model):
     is_public = models.BooleanField(default=False)
     amount = models.DecimalField(max_digits=14, decimal_places=2, null=False, blank=False)
     deadline = models.DateTimeField(null=False, blank=False)
+    objects = ProjectManager()
 
     tags = models.ManyToManyField('kickstart.Tag', related_name='projects')
+    donators = models.ManyToManyField(User, through='ProjectDonation', related_name='donations')
 
     def __unicode__(self):
         return self.name
@@ -80,6 +96,36 @@ class Project(models.Model):
             benefit.save()
             self.benefits.add(benefit)
 
+    def get_donations(self):
+        return list(ProjectDonation.objects.filter(project=self).select_related('benefit').all())
+
+
+class ProjectDonation(models.Model):
+    project = models.ForeignKey('kickstart.Project')
+    user = models.ForeignKey(User)
+    benefit = models.ForeignKey('kickstart.Benefit')
+
+    def __unicode__(self):
+        return u"{0} - {1} - {2} bucks".format(self.project.name, self.user.username, self.benefit.amount)
+
+    def save(self, *args, **kwargs):
+        take_money = not self.pk
+        super(ProjectDonation, self).save(*args, **kwargs)
+
+        if take_money:
+            self.user.profile.balance -= self.benefit.amount
+            self.user.profile.save()
+
+            notification_message = u'Congratulation! Your project received donation {amount} bucks from user {user}'.format(
+                amount=self.benefit.amount,
+                user=self.user.username
+            )
+            send_mail(
+                _(u'Your project "{0}" received donation'.format(self.project.name)).encode('utf-8'),
+                _(notification_message).encode('utf-8'),
+                settings.DEFAULT_FROM_EMAIL,
+                (self.user.email, )
+            )
 
 def project_file_dir(instance):
     project = instance.project
@@ -120,6 +166,9 @@ class Benefit(models.Model):
 
     class Meta:
         ordering = ['amount']
+
+    def __unicode__(self):
+        return str(self.amount)
 
 
 class Tag(models.Model):

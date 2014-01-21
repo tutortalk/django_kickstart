@@ -1,5 +1,84 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block css %}
+<style>
+    .projects {
+        margin-top: 20px;
+    }
+    .project {
+        padding: 15px;
+        border: 1px solid gray;
+        width: 800px;
+        margin-bottom: 15px;
+    }
+    .project .header:after {
+      content: " ";
+      visibility: hidden;
+      display: block;
+      height: 0;
+      clear: both;
+    }
+    .project .header:after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+    .project .header {
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .project .header > * {
+        float: left;
+    }
+    .project .header .author {
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+
+<div class="projects">
+    <form action="" method="GET">
+        <b>{% trans "Search projects" %}:</b>
+        <input type="text" name="search" value="{{ request.GET.search }}">
+        <input type="submit" value="{% trans "Search" %}">
+    </form>
+
+    {% for project in projects %}
+    <div class="project">
+        <div class="header">
+            <div class="author">
+                <img src="{{ project.user.profile.get_avatar }}"><br>
+                <a href="{% url "profile" project.user.username %}" target="_blank">{{ project.user.username|capfirst }}</a>
+            </div>
+            <h2><a href="{% url "project" project.slug_name %}" target="_blank">{{ project.name }}</a></h2>
+        </div>
+        <b>{% trans "Amount" %}:</b> {{ project.amount }} bucks | 
+        <b>{% trans "Deadline" %}:</b> {{ project.deadline|date:"jS F Y H:i T" }}
+        {{ project.short_desc|linebreaks }}
+        <b>{% trans "Tags" %}:</b>
+        {% for tag in project.tags.all %}
+            <a href="{% url "home" %}?search={{ tag.name }}">{{ tag.name }}</a>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ request.GET.search }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ request.GET.search }}">next</a>
+        {% endif %}
+    </span>
+</div>
 {% endblock %}

@@ -1,0 +1,6 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block form_top %}
+<h3><a href="/kickstart-admin/{{ app_label }}/projectdonation/?project__id__exact={{ object_id }}" target="_blank">{% trans "View project donations" %}</a></h3>
+{% endblock %}

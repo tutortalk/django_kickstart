@@ -37,15 +37,42 @@
 .tags {
     margin-top: 10px;
 }
-.amount {
+.amount, .donators {
     margin-bottom: 10px;
 }
 .benefit {
     margin-bottom: 10px;
 }
+.errors {
+    color: red;
+}
 </style>
 
 {% endblock css %}
+
+{% block js %}
+<script>
+    $(document).ready(function(){
+        $('.donation-form').submit(function(){
+            var form = $(this);
+
+            form.parsley('validate');
+            if (form.parsley('isValid')) {
+                $.post(form.attr('action'), form.serialize(), function(data){
+                    if (data.success) {
+                        document.location.reload(true);
+                    }
+                    else {
+                        form.find('.errors').html(data.errors);
+                    }
+                });
+            }
+
+            return false;
+        });
+    });
+</script>
+{% endblock js %}
 
 {% block content %}
 
@@ -62,7 +89,7 @@
         <div class="tags">
             <b>{% trans "Tags" %}:</b>
             {% for tag in project.tags.all %}
-                {{ tag.name }}            
+                <a href="{% url "home" %}?search={{ tag.name }}">{{ tag.name }}</a>
             {% endfor %}
         </div>
 
@@ -72,10 +99,29 @@
             <li><a href="{{ file.file.url }}">{{ file.original_filename }}</a></li>
         {% endfor %}
         </ol>
+
+        {% if donation_form %}
+            <h2>{% trans "Donate to this project" %}:</h2>
+            <form action="{% url "project-donate" %}" class="donation-form" method="POST", parsley-validate>
+                {% csrf_token %}
+                {{ donation_form.project }}
+                <b>{{ donation_form.benefit.label_tag }}</b>
+                {{ donation_form.benefit }}
+                <input type="submit" value="{% trans "Donate" %}">
+                <div class="errors"></div>
+              
+            </form>
+        {% endif %}
     </div>
     <dir class="column right">
+        <b>{% trans "Donators" %}:</b>
+        <div class="donators">{{ donations|length }}</div>
+
         <b>{% trans "Target amount" %}:</b>
         <div class="amount">{{ project.amount }} bucks</div>
+
+        <b>{% trans "Collected amount" %}:</b>
+        <div class="amount">{{ collected_amount }}</div>
 
         <div>{{ project.deadline|date:"jS F Y H:i T" }}</div>
 

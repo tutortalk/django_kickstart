@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from registration.backends.default.views import RegistrationView as TwoStepsRegistrationView
-from .models import Profile, Project, ProjectFile, Benefit, profile_avatar_dir, project_file_dir
+from .models import Profile, Project, ProjectDonation, ProjectFile, Benefit, profile_avatar_dir, project_file_dir
 import loginza
 from django.contrib import messages, auth
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -14,8 +14,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.generic.base import View
 from django.views.generic.edit import FormView
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
 from parsley.decorators import parsleyfy
-from .forms import ProfileForm, DebugProfileForm, ProjectForm, DebugProjectForm, BenefitForm
+from .forms import ProfileForm, DebugProfileForm, ProjectForm, DebugProjectForm, BenefitForm, DonationForm
 
 import datetime
 import json
@@ -138,8 +139,18 @@ class AjaxUploadMixin(object):
         return uploader.getUploadName(), result
 
 
-class HomeView(TemplateView):
+class HomeView(ListView):
     template_name = "home.html"
+    context_object_name = 'projects'
+    paginate_by = 10
+
+    def get_queryset(self):
+        search = self.request.GET.get('search', None)
+        if search:
+            return Project.objects.search_projects(search)
+
+        else:
+            return Project.objects.get_all_projects()
 
 
 class ProfileView(DetailView):
@@ -215,6 +226,50 @@ class ProjectDetailView(DetailView):
     slug_url_kwarg = 'slug_name'
     template_name = 'project/detail.html'
     context_object_name = 'project'
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectDetailView, self).get_context_data(**kwargs)
+        project = context['project']
+        donations = project.get_donations()
+
+        if self.request.user.is_authenticated():
+            if len([d for d in donations if d.user_id == self.request.user.pk]) == 0:
+                donation = ProjectDonation(project=project, user=self.request.user)
+                context['donation_form'] = DonationForm(instance=donation)
+
+        collected_amount = 0
+        for donation in donations:
+            collected_amount += donation.benefit.amount
+
+        context.update({
+            'collected_amount': collected_amount,
+            'donations': donations,
+        })
+
+        return context
+
+
+class ProjectDonateView(LoginRequiredMixin, JSONResponseMixin, FormView):
+    form_class = DonationForm
+
+    def get_form_kwargs(self):
+        kwargs = super(ProjectDonateView, self).get_form_kwargs()
+        project = Project.objects.get(pk=self.request.POST.get('project', None))
+        kwargs['instance'] = ProjectDonation(project=project, user=self.request.user)
+
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+
+        return self.json_response({'success': True})
+
+    def form_invalid(self, form):
+        errors_strings = []
+        for error in form.errors.values():
+            errors_strings.append('<br>'.join(error))
+
+        return self.json_response({'success': False, 'errors': '<br>'.join(errors_strings)})
 
 
 class ProjectCreateView(LoginRequiredMixin, FormView):
