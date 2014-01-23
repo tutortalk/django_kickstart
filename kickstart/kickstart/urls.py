@@ -31,6 +31,7 @@ urlpatterns = patterns('',
 
     url(r'^project/create/$', views.ProjectCreateView.as_view(), name='project-create'),
     url(r'^project/donate/$', views.ProjectDonateView.as_view(), name='project-donate'),
+    url(r'^project/comment/save/$', views.CommentSaveView.as_view(), name='project-comment-save'),
     url(r'^project/(?P<slug_name>[^/]+)/$', views.ProjectDetailView.as_view(), name='project'),
     url(r'^project/(?P<project_id>[0-9]+)/publish/$', views.ProjectPublishView.as_view(), name='project-publish'),
     url(r'^project/(?P<project_id>[0-9]+)/edit/$', views.ProjectEditView.as_view(), name='project-edit'),

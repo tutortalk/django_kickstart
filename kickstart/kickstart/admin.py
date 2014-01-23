@@ -1,7 +1,8 @@
 from django.contrib import admin
-from kickstart.models import Profile, Project, ProjectDonation
+from kickstart.models import Profile, Project, ProjectDonation, Comment
 
 admin.site.register(Profile)
+admin.site.register(Comment)
 
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'user', 'amount', 'deadline', 'is_public')

@@ -7,6 +7,9 @@ from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 from easy_thumbnails.files import get_thumbnailer
 from django.core.mail import send_mail
+import datetime
+from mptt.models import MPTTModel, TreeForeignKey
+from django.db import connection
 
 
 def profile_avatar_dir(instance):
@@ -67,10 +70,76 @@ class ProjectManager(models.Manager):
 
         return self.get_all_projects().filter(query)
 
+    def close_recently_finished(self):
+        now = timezone.now()
+        base_queryset = (self.annotate(collected=models.Sum('projectdonation__benefit__amount'))
+                             .filter(is_public=True, status=Project.IN_PROGRESS, deadline__lte=now))
+
+        succeeded = base_queryset.filter(amount__lte=models.F('collected'))
+        failed = (base_queryset.filter(models.Q(amount__gt=models.F('collected')) | models.Q(collected=None))
+                               .select_related('user')
+                               .prefetch_related(
+                                    'projectdonation_set',
+                                    'projectdonation_set__benefit',
+                                    'projectdonation_set__user',
+                                    'projectdonation_set__user__profile'))
+
+
+        notify_succeeded = [(project.user.email, project.name) for project in succeeded]
+
+        balances = {}
+        notify_failed = []
+
+        for project in failed:
+            notify_failed.append((project.user.email, project.name))
+
+            for donation in project.projectdonation_set.all():
+                print 'return {0} to {1}'.format(donation.benefit.amount, donation.user.username)
+                profile_id = donation.user.profile.pk
+
+                if profile_id not in balances:
+                    balances[profile_id] = donation.user.profile.balance
+
+                balances[profile_id] += donation.benefit.amount
+
+
+        update_param_list = [(balance, profile_id) for (profile_id, balance) in balances.items()]
+        cursor = connection.cursor()
+        cursor.executemany("UPDATE kickstart_profile SET balance=%s WHERE id=%s", update_param_list)
+
+        succeeded.update(status=Project.SUCCESS)
+        failed.update(status=Project.FAIL)
+
+        for email, project_name in notify_succeeded:
+            send_mail(
+                _(u'Project funding is finished').encode('utf-8'),
+                _(u'Congratulations! Your project "{0}" funding successfully finished!').format(project_name).encode('utf-8'),
+                settings.DEFAULT_FROM_EMAIL,
+                (email, )
+            )
+
+        for email, project_name in notify_failed:
+            send_mail(
+                _(u'Project funding is finished').encode('utf-8'),
+                _(u'Sorry, but your project "{0}" funding has failed').format(project_name).encode('utf-8'),
+                settings.DEFAULT_FROM_EMAIL,
+                (email, )
+            )
+
 
 class Project(models.Model):
+    IN_PROGRESS = 0
+    SUCCESS = 1
+    FAIL = 2
+    STATUSES = (
+        (IN_PROGRESS, _(u"In progress")),
+        (SUCCESS, _(u"Success")),
+        (FAIL, _(u"Fail"))
+    )
+
     user = models.ForeignKey(User, related_name='projects')
     name = models.CharField(max_length=255)
+    status = models.PositiveSmallIntegerField(default=0, choices=STATUSES, null=False, blank=False)
     slug_name = models.CharField(max_length=255, unique=True)
     short_desc = models.TextField(null=False, blank=False)
     desc = models.TextField(null=False, blank=False)
@@ -176,3 +245,24 @@ class Tag(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+def tz_aware_now():
+    """Current time with respect to the timezone."""
+    return timezone.make_aware(datetime.datetime.now(),
+                               timezone.get_default_timezone())
+
+
+class Comment(MPTTModel):
+    project = models.ForeignKey(Project, related_name='comments')
+    user = models.ForeignKey(User)
+    comment = models.TextField()
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children')
+    timestamp = models.DateTimeField(default=tz_aware_now)
+
+    class MPTTMeta:
+        order_insertion_by = ['timestamp']
+
+    def __unicode__(self):
+        result = self.user.username + ': ' + self.comment[:70]
+        return result

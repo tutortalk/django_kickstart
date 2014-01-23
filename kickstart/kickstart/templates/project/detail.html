@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load mptt_tags %}
 
 {% block css %}
 <style>
@@ -46,6 +47,22 @@
 .errors {
     color: red;
 }
+.comment-form-prototype {
+    display: none;
+}
+.comment-form textarea {
+    border: 1px solid gray;
+}
+.parsley-error {
+    border: 1px solid red !important;
+    background-color: #FFECEC;
+}
+ul.parsley-error-list {
+    display:none !important;
+}
+ul.parsley-error-list li {
+    display:none !important;
+}
 </style>
 
 {% endblock css %}
@@ -69,6 +86,47 @@
             }
 
             return false;
+        });
+
+        $('.comment-form-prototype form').submit(function(){
+            return false;
+        });
+
+        $('.reply').click(function(){
+            var form = $('.comment-form-prototype form').clone();
+            var button = $(this);
+            form.addClass('comment-form');
+
+            if (button.hasClass('comment-reply')) {
+                var id = button.attr('data-id');
+                form.find('#id_parent').attr('value', id);
+            }
+
+            button.hide();
+            button.after(form);
+
+            return false;
+        });
+
+        $(document).on('submit', '.comment-form', function(){
+            var form = $(this);
+            form.parsley('validate');
+            if (form.parsley('isValid')) {
+                $.post(form.attr('action'), form.serialize(), function(data){
+                    if (data.success) {
+                        window.location = window.location.toString().split('#')[0] + '#comment-' + data.comment_id;
+                        window.location.reload(true);
+                    }
+                })
+            }
+
+            return false;
+        });
+
+        $(document).on('click', 'form .cancel', function(){
+            var form = $(this).parents('form');
+            form.prev().show();
+            form.remove();
         });
     });
 </script>
@@ -134,4 +192,38 @@
     </dir>
 </div>
 
+<div class="comment-form-prototype">
+    <form action="{% url "project-comment-save" %}" method="POST" parsley-validate>
+        {% csrf_token %}
+        {% for field in comment_form.hidden_fields %}
+            {{ field }}
+        {% endfor %}
+
+        {{ comment_form.comment }}<br>
+        <input type="submit" value="{% trans "Save" %}">
+        <button class="cancel">{% trans "Cancel" %}</button>
+    </form>
+</div>
+
+<ul>
+    {% recursetree comments %}
+        <li>
+            <a name="comment-{{ node.pk }}"></a>
+            {{ node.comment|linebreaks }}
+            <a href="{% url "profile" node.user.username %}">{{ node.user.username }}</a> <b>{{ node.timestamp }}</b>
+            <a href="#comment-{{ node.pk }}">{% trans "comment link" %}</a><br>
+            {% if request.user.is_authenticated %}
+                <button class="reply comment-reply" data-id="{{ node.pk }}">{% trans "Reply" %}</button>
+            {% endif %}
+            <hr>
+            {% if not node.is_leaf_node %}
+                <ul class="children">
+                    {{ children }}
+                </ul>
+            {% endif %}
+        </li>
+    {% endrecursetree %}
+</ul>
+
+<button class="reply post-reply">{% trans "Add comment" %}</button>
 {% endblock content %}

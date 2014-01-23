@@ -34,6 +34,8 @@ INSTALLED_APPS = (
     'django_select2',
     'kickstart',
     "easy_thumbnails",
+    'mptt',
+
 )
 
 MIDDLEWARE_CLASSES = (

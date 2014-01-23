@@ -1,5 +1,5 @@
 from django import forms
-from .models import Profile, Project, Tag, Benefit, ProjectDonation
+from .models import Profile, Project, Tag, Benefit, ProjectDonation, Comment
 from django.contrib.auth.forms import AuthenticationForm
 from parsley.decorators import parsleyfy
 from django_select2 import AutoModelSelect2TagField
@@ -97,3 +97,23 @@ class DonationForm(forms.ModelForm):
             raise forms.ValidationError("Project is not published yet")
 
         return project
+
+
+@parsleyfy
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['project', 'comment', 'parent']
+
+        widgets = {
+            'project': forms.widgets.HiddenInput(),
+            'parent': forms.widgets.HiddenInput()
+        }
+
+    def clean_parent(self):
+        comment = self.cleaned_data['parent']
+
+        if comment and comment.project != self.cleaned_data['project']:
+            raise forms.ValidationError("Wrong project")
+
+        return comment

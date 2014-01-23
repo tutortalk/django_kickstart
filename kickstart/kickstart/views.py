@@ -1,6 +1,6 @@
 from django.views.generic import TemplateView
 from registration.backends.default.views import RegistrationView as TwoStepsRegistrationView
-from .models import Profile, Project, ProjectDonation, ProjectFile, Benefit, profile_avatar_dir, project_file_dir
+from .models import Profile, Project, ProjectDonation, ProjectFile, Benefit, Comment, profile_avatar_dir, project_file_dir
 import loginza
 from django.contrib import messages, auth
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -16,7 +16,7 @@ from django.views.generic.edit import FormView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from parsley.decorators import parsleyfy
-from .forms import ProfileForm, DebugProfileForm, ProjectForm, DebugProjectForm, BenefitForm, DonationForm
+from .forms import ProfileForm, DebugProfileForm, ProjectForm, DebugProjectForm, BenefitForm, DonationForm, CommentForm
 
 import datetime
 import json
@@ -244,6 +244,8 @@ class ProjectDetailView(DetailView):
         context.update({
             'collected_amount': collected_amount,
             'donations': donations,
+            'comments': project.comments.select_related('user').all(),
+            'comment_form': CommentForm(initial={'project': project})
         })
 
         return context
@@ -377,6 +379,24 @@ class BenefitSaveView(LoginRequiredMixin, ProjectOwnerMixin, FormView, JSONRespo
         return self.json_response({'success': True, 'benefit_id': benefit.pk})
 
     def form_invalid(self, form):
+        return self.json_response({'success': False})
+
+
+class CommentSaveView(LoginRequiredMixin, FormView, JSONResponseMixin, View):
+    form_class = CommentForm
+
+    def get_form_kwargs(self):
+        kwargs = super(CommentSaveView, self).get_form_kwargs()
+        kwargs['instance'] = Comment(user=self.request.user)
+
+        return kwargs
+
+    def form_valid(self, form):
+        comment = form.save()
+        return self.json_response({'success': True, 'comment_id': comment.pk})
+
+    def form_invalid(self, form):
+        print form.errors
         return self.json_response({'success': False})
 
 
