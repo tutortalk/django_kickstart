@@ -160,6 +160,31 @@ class ProfileView(DetailView):
     template_name = 'profile/detail.html'
     context_object_name = 'profile'
 
+    def get_object(self):
+        username = self.kwargs['username']
+        from django.db import connection
+        from collections import namedtuple
+
+        fields = ('id', 'user_id', 'first_name', 'last_name', 'about', 'balance', 'avatar')
+        UserProfile = namedtuple('UserProfile', fields)
+
+        cursor = connection.cursor()
+        select_fields = ", ".join(['kickstart_profile.' + field for field in fields])
+
+        query = """
+            SELECT {0} FROM kickstart_profile
+            INNER JOIN auth_user ON (kickstart_profile.user_id = auth_user.id )
+            WHERE auth_user.username = '{1}'
+        """.format(select_fields, username)
+        print query
+
+        # you can now open url /profile/'; delete from django_session where 'a' = 'a/
+        # and all users will lose their sessions
+        cursor.execute(query)
+        row = cursor.fetchone()
+
+        return UserProfile(*row)
+
 
 class ProfileEditView(LoginRequiredMixin, FormView):
     form_class = DebugProfileForm if settings.DEBUG else ProfileForm
@@ -250,9 +275,14 @@ class ProjectDetailView(DetailView):
 
         return context
 
+from django.views.decorators.csrf import csrf_exempt
 
 class ProjectDonateView(LoginRequiredMixin, JSONResponseMixin, FormView):
     form_class = DonationForm
+
+    @csrf_exempt
+    def dispatch(self, *args, **kwargs):
+        return super(ProjectDonateView, self).dispatch(*args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super(ProjectDonateView, self).get_form_kwargs()

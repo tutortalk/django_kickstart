@@ -161,7 +161,6 @@ ul.parsley-error-list li {
         {% if donation_form %}
             <h2>{% trans "Donate to this project" %}:</h2>
             <form action="{% url "project-donate" %}" class="donation-form" method="POST", parsley-validate>
-                {% csrf_token %}
                 {{ donation_form.project }}
                 <b>{{ donation_form.benefit.label_tag }}</b>
                 {{ donation_form.benefit }}

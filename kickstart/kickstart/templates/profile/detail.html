@@ -20,7 +20,7 @@
 
     {% if profile.about %}
         <b>{% trans "About" %}:</b><br>
-        {{ profile.about|linebreaksbr }}
+        {{ profile.about|safe|linebreaksbr }}
     {% endif %}
 
     <h3>{% trans "Projects" %}:</h3>
