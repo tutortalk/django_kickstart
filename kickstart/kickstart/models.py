@@ -27,8 +27,8 @@ def profile_avatar_upload(instance, filename):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, related_name='profile')
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100, null=True, blank=True)
+    last_name = models.CharField(max_length=100, null=True, blank=True)
     about = models.TextField(null=True, blank=True)
     balance = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     avatar = models.ImageField(upload_to=profile_avatar_upload, null=True, blank=True)
