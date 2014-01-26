@@ -172,6 +172,9 @@ ul.parsley-error-list li {
         {% endif %}
     </div>
     <dir class="column right">
+        <b>{% trans "Status" %}</b>
+        <div class="status">{{ project.get_status_display }}</div><br>
+
         <b>{% trans "Donators" %}:</b>
         <div class="donators">{{ donations|length }}</div>
 
@@ -179,7 +182,7 @@ ul.parsley-error-list li {
         <div class="amount">{{ project.amount }} bucks</div>
 
         <b>{% trans "Collected amount" %}:</b>
-        <div class="amount">{{ collected_amount }}</div>
+        <div class="collected amount">{{ collected_amount }}</div>
 
         <div>{{ project.deadline|date:"jS F Y H:i T" }}</div>
 

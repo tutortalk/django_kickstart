@@ -21,4 +21,4 @@ DEBUG_TOOLBAR_PANELS_LOCAL = (
     'debug_toolbar.panels.logger.LoggingPanel',
 )
 
-DEBUG_TOOLBAR = True
+DEBUG_TOOLBAR = False

@@ -8,3 +8,4 @@ pytils
 django_select2
 pillow
 django-mptt
+selenium

@@ -22,8 +22,8 @@
 <body>
 <div class="header">
     {% if request.user.is_authenticated %}
-        Hello, <a href="{% url "profile" request.user.username %}">{{ request.user.username }}</a> | 
-        <b>{% trans "Balance" %}:</b> {{ request.user.profile.balance }} |
+        Hello, <a href="{% url "profile" request.user.username %}" class="username">{{ request.user.username }}</a> | 
+        <b>{% trans "Balance" %}:</b> <span class="balance">{{ request.user.profile.balance }}</span> |
         <a href="{% url "custom-logout" %}">{% trans "Logout" %}</a>
     {% else %}
         {% loginza_button lang=request.LANGUAGE_CODE %}

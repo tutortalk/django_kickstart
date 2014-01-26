@@ -25,8 +25,8 @@
 
     <h3>{% trans "Projects" %}:</h3>
     {% for project in profile.user.projects.all %}
-    <div>
-        <h2><a href="{% url "project" project.slug_name %}">{{ project.name }}</a></h2>
+    <div class="project">
+        <h2><a href="{% url "project" project.slug_name %}" class="project-name">{{ project.name }}</a></h2>
         {% if profile.user_id == request.user.pk %}
             <a href="{% url "project-edit" project.pk %}">{% trans "Edit" %}</a><br>
         {% endif %}
